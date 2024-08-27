@@ -4,6 +4,9 @@
 <ul>
     {% for question in latest_question_list %}
     <li>
+        {% comment %} 이렇게 이름을 이용해서 URL 연결가능, 앱네임: url 명 , 뒤에 url 패턴에게 꽂아넘겨짐{% endcomment %}
+        {% comment %} url 패턴이 바뀌더라도 상관 없음(유지보수 측 용이) {% endcomment %}
+        {% comment %} href="{%url 'polls:detail'question_id=question.id %}" {% endcomment %}
         <a href="/polls/{{question.id}}">{{question.question_text}}</a>
     </li>
     {% endfor %}
