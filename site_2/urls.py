@@ -18,5 +18,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('polls/', include('polls.urls')) # 앱단위로 url을 넘김 ,유지보수 용이 (앱 안에 urls.py 추가)
+    path('polls/', include('polls.urls')), # 앱단위로 url을 넘김 ,유지보수 용이 (앱 안에 urls.py 추가)
 ]

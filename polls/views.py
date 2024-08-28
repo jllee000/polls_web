@@ -1,34 +1,64 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, Http404
 from .models import Question
-# Create your views here.
-def index(request) :
-    # Question.objects.all()
+
+
+def index(request):
+    # return HttpResponse('Hello world')
+
+    # order_by('-pub_date')[:5] : 등록 날짜 기준 내림차순 정렬 후 앞에서 5개까지만
     latest_question_list = Question.objects.order_by('-pub_date')[:5]
-    context = {'latest_question_list' : latest_question_list}
-    # 위에 key 값임 ! text가 아님, 딕셔너리 식 key값으로 html에서 꺼내서 씀 
+    # 지난 실습에서 render() 함수의 {~:~} 로 html 파일에게 넘겨주던 dict를 context라고 부릅니다.
+    context = {'latest_question_list': latest_question_list}
     return render(request, 'polls/index.html', context)
 
-# 
-def detail(request, question_id) : 
-    # try문 대신 바로 검사 함수 있음 get_object_or_404
-    # get_list_or_404는 튜플이나 리스트 형태
-    # ++ 404 페이지도 커스텀 가능 : polls/templates/polls 내에 404.html 생성
-    q = get_object_or_404(Question,id=question_id)
-    # 어느테이블에서, 어떤 기준으로 꺼낼지 인자 넘김
-    # try문
-    # try :
-    #     q= Question.objects.get(id=question_id)
 
-    # #조건문
-    # except Question.DoesNotExist :
-    #     raise Http404('Question {} 데이터 없음'.format(question_id)) 
-    #     # 특정 에러를 강제로 발생시키는 명령문
-    return render(request, 'polls/detail.html',{'question':q})
+def detail(request, question_id):
+    # 1)
+    # return HttpResponse("You're looking at question {}.".format(question_id))
 
-def vote(request, question_id) :
-    response = "you're voting on question {}"
-    return HttpResponse(response.format(question_id))
+    # 2)
+    # q = Question.objects.get(pk=question_id)
+    # return render(request, 'polls/detail.html', {'question':q})
 
-def results(request, question_id) :
-    return HttpResponse("you're looking at question {}".format(question_id))
+    # 3)
+    # try:
+    #     q = Question.objects.get(pk=question_id)
+    # except Question.DoesNotExist:
+    #     raise Http404('Question {} does not exist'.format(question_id))
+    # return render(request, 'polls/detail.html', {'question':q})
+
+    # 4)
+    # list(QuerySet)가 return될 시에는 get_object_or_404 대신 get_list_or_404를 활용
+    q = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/detail.html', {'question':q})
+
+
+def results(request, question_id):
+    # response = "You're looking at the results of question {}."
+    # return HttpResponse(response.format(question_id))
+
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/result.html', {'question': question})
+
+
+def vote(request, question_id):
+    # return HttpResponse("You're voting on question {}.".format(question_id))
+
+    question = get_object_or_404(Question, pk=question_id)
+    # print(request.POST)
+    # return HttpResponse('vote')
+    try:
+        selected_choice = question.choice_set.get(pk=request.POST['choice_select'])
+        # request.POST['choice_select'] :
+        # detail.html의 <input type="radio" name="choice_select" value="{{ choice.id }}">에서 날라온 값
+        # form으로 제출된 POST Request 전체에서 'choice_select'가 name인 HTML 태그의 value를 꺼내는 코드
+        # request.POST 는 {~~~, 'choice_select':7} 와 같은 dictionary 형태
+    except:
+        # request.POST['choice_select']값이 없을 경우, error_message를 가지고 details.html로 되돌아감
+        context = {'question': question, 'error_message': "You didn't select a choice."}
+        return render(request, 'polls/detail.html', context)
+    else: # try 문에서 에러가 발생하지 않았을 경우 마지막에 실행됩니다.
+        selected_choice.votes += 1
+        selected_choice.save() # 실제 DB 저장
+        return redirect('polls:results', question_id=question.id)
